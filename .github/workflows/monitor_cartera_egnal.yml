@@ -22,10 +22,21 @@ jobs:
         run: pip install -r requirements.txt -q
 
       # Write settings.toml from the SETTINGS_TOML GitHub Secret.
-      # The secret contains the full contents of your personal settings.toml.
-      # This file is never stored in the repository.
+      # Uses printf to correctly handle multiline content and special characters.
+      # This file is never stored in the repository (.gitignore).
       - name: Write settings.toml from secret
-        run: echo "${{ secrets.SETTINGS_TOML }}" > settings.toml
+        env:
+          SETTINGS_TOML: ${{ secrets.SETTINGS_TOML }}
+        run: printf '%s' "$SETTINGS_TOML" > settings.toml
+
+      - name: Validate settings.toml was written
+        run: |
+          if [ ! -s settings.toml ]; then
+            echo "ERROR: settings.toml is empty or missing."
+            echo "Make sure the SETTINGS_TOML secret is set in GitHub repository settings."
+            exit 1
+          fi
+          echo "settings.toml written successfully ($(wc -c < settings.toml) bytes)"
 
       # Only run the ETF monitor on weekdays (markets are closed on weekends)
       - name: Check weekday
