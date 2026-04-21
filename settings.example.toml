@@ -1,0 +1,137 @@
+# =============================================================================
+# settings.example.toml — Template configuration file
+# =============================================================================
+# Copy this file to settings.toml and fill in your own values.
+#
+#   cp settings.example.toml settings.toml
+#
+# settings.toml is listed in .gitignore and will never be committed.
+# Credentials (GMAIL_USER, GMAIL_PASS) must be set as environment variables
+# or GitHub Secrets — never stored in any file.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# [general]
+# -----------------------------------------------------------------------------
+[general]
+
+# Report language: "es" (Spanish) or "en" (English)
+# Override at runtime with the MONITOR_LANG environment variable.
+lang = "es"
+
+
+# =============================================================================
+# ETF MONITOR
+# =============================================================================
+
+# Add one [[etf.funds]] block per fund you want to track.
+# The order here determines the order in the report and in milestone columns.
+
+[[etf.funds]]
+id               = "FUND1"           # Unique identifier (e.g. "IUIT", "VWCE")
+ticker           = "TICKER.EXCHANGE" # Yahoo Finance ticker (e.g. "IUIT.L")
+name             = "Full Fund Name"
+isin             = "IE00XXXXXXXX"
+precio_medio     = 0.0               # Weighted average purchase price in EUR
+participaciones  = 0.0               # Total units held
+aportacion_mes   = 0.0               # Monthly contribution during Phase 1 (EUR)
+aportacion_fase2 = 0.0               # Monthly contribution during Phase 2 (EUR)
+inicio           = ""                # First purchase date YYYY-MM-DD (empty = today)
+color            = "#3A7BD5"         # Hex accent colour for the report
+
+# Add more funds by copying the block above:
+# [[etf.funds]]
+# id = "FUND2"
+# ...
+
+
+# -----------------------------------------------------------------------------
+# [etf.plan]
+# -----------------------------------------------------------------------------
+[etf.plan]
+
+# Date when Phase 2 begins (e.g. when a savings account reaches its target)
+phase_change_date = "2027-01-01"
+
+# Projected portfolio value milestones per year.
+# Each row: year_number = [fund1_eur, fund2_eur, ...]
+# Column order must match the [[etf.funds]] blocks above.
+[etf.plan.milestones]
+1  = [0, 0]
+2  = [0, 0]
+5  = [0, 0]
+10 = [0, 0]
+
+
+# -----------------------------------------------------------------------------
+# [etf.tax] — Update rates if tax law changes
+# -----------------------------------------------------------------------------
+[etf.tax]
+brackets = [
+    [6_000,        0.19],
+    [44_000,       0.21],
+    [150_000,      0.23],
+    [999_999_999,  0.27],
+]
+
+
+# -----------------------------------------------------------------------------
+# [etf.thresholds]
+# -----------------------------------------------------------------------------
+[etf.thresholds]
+ma_short            = 50
+ma_long             = 200
+drop_from_high_warn = -0.15
+loss_vs_cost_warn   = -0.10
+critical_threshold  = -0.20
+
+
+# =============================================================================
+# CRYPTO STAKING MONITOR
+# =============================================================================
+
+# Add one [[crypto.positions]] block per staking position.
+# For flexible positions (redeemable with notice):
+
+[[crypto.positions]]
+symbol                 = "ETH"           # Asset ticker
+name                   = "Ethereum"      # Full asset name
+amount                 = 0.0             # Units currently staked
+product                = "Flexible Stake"
+apy                    = 0.0             # Annual percentage yield
+type                   = "flexible"      # "flexible" or "fixed"
+rescue_days            = 5               # Business days to redeem
+start_date             = "2026-01-01"    # Staking start date YYYY-MM-DD
+next_distribution      = "2026-01-03"    # Next reward date YYYY-MM-DD (update after each reward)
+distribution_freq_days = 2               # Reward frequency in days
+coingecko_id           = "ethereum"      # CoinGecko asset ID
+
+# For fixed-term positions (locked until maturity):
+# [[crypto.positions]]
+# symbol        = "BTC"
+# name          = "Bitcoin"
+# amount        = 0.0
+# product       = "Fixed 30 days"
+# apy           = 0.0
+# type          = "fixed"
+# rescue_days   = 0
+# start_date    = "2026-01-01"
+# maturity_date = "2026-01-31"   # Release date YYYY-MM-DD
+# coingecko_id  = "bitcoin"
+
+
+# -----------------------------------------------------------------------------
+# [crypto.thresholds]
+# -----------------------------------------------------------------------------
+[crypto.thresholds]
+fg_extreme_greed  = 80
+fg_high_greed     = 65
+fg_extreme_fear   = 20
+change_24h_danger = -10
+change_24h_warn   = -5
+change_24h_pump   = 10
+change_30d_bear   = -20
+change_30d_bull   =  20
+ath_danger_pct    = -5
+ath_warn_pct      = -15

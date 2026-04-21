@@ -1,0 +1,54 @@
+name: Monitor Cartera Egnal
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # 06:00 UTC = 08:00 Madrid (CEST)
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    name: Run Portfolio Monitor (ETF and Crypto)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -q
+
+      # Write settings.toml from the SETTINGS_TOML GitHub Secret.
+      # The secret contains the full contents of your personal settings.toml.
+      # This file is never stored in the repository.
+      - name: Write settings.toml from secret
+        run: echo "${{ secrets.SETTINGS_TOML }}" > settings.toml
+
+      # Only run the ETF monitor on weekdays (markets are closed on weekends)
+      - name: Check weekday
+        id: check-day
+        run: |
+          DAY=$(date +%u)
+          if [ "$DAY" -ge 1 ] && [ "$DAY" -le 5 ]; then
+            echo "is_weekday=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_weekday=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run ETF Monitor
+        if: github.event_name == 'workflow_dispatch' || steps.check-day.outputs.is_weekday == 'true'
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          MONITOR_LANG: es
+        run: python -m monitor_etf --no-browser
+
+      - name: Run Crypto Staking Monitor
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          MONITOR_LANG: es
+        run: python -m monitor_crypto --no-browser

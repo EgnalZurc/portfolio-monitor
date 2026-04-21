@@ -1,0 +1,24 @@
+# Personal configuration — never commit real positions or portfolio data
+settings.toml
+
+# Legacy monolithic scripts (replaced by monitor_etf/ and monitor_crypto/ packages)
+monitor_etf.py
+crypto_staking_monitor.py
+
+# Generated HTML reports
+informe_etf.html
+crypto_report.html
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
