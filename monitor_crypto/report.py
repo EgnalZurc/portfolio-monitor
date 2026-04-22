@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from shared.i18n import t
 
 from .thresholds import ATH_DANGER_PCT, ATH_WARN_PCT
-from .signals import compute_signals, days_until_available, next_distribution_in
+from .signals import compute_signals, days_until_available
 
 
 def sparkline_svg(ohlc_data: List, color: str = "#4CAF50", width: int = 120, height: int = 40) -> str:
@@ -42,11 +42,10 @@ def _availability_badge(days_avail: int) -> str:
 
 
 def _maturity_label(pos: Dict[str, Any]) -> str:
-    """Return a human-readable maturity or next-reward label."""
+    """Return a human-readable maturity label (fixed) or product type (flexible)."""
     if pos["type"] == "fixed":
         return t("crypto.matures", date=pos["maturity_date"])
-    nd = next_distribution_in(pos)
-    return t("crypto.next_reward", days=nd) if nd is not None else t("crypto.flexible")
+    return t("crypto.flexible")
 
 
 def _card_html(
@@ -110,7 +109,7 @@ def _card_html(
         f'<div class="row-data"><span>{t("crypto.label_product")}</span> <strong>{pos["product"]} ({pos["apy"]}% APY)</strong></div>'
         f'<div class="row-data"><span>{maturity_str}</span></div>'
         f'<div class="row-data"><span>{t("crypto.label_daily_gain")}</span> <strong>+{daily_gain_token:.8f} {pos["symbol"]} (≈€{daily_gain_eur:.4f})</strong></div>'
-        f'<div class="row-data"><span>{t("crypto.label_accumulated")}</span> <strong>+€{total_earned_eur:.4f}</strong></div>'
+        f'<div class="row-data"><span>{t("crypto.label_accumulated")}</span> <strong>+€{total_earned_eur:.4f} {t("crypto.label_accumulated_since", date=pos["start_date"])}</strong></div>'
         f'<div class="row-data">{ath_html} &nbsp; '
         f'<span style="color:{c30}">30d: {change_30d_str}</span> &nbsp; '
         f'<span style="color:{c14}">14d: {change_14d_str}</span></div>'

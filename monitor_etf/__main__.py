@@ -10,7 +10,7 @@ from shared.delivery import deliver_report
 from shared.config_loader import LOG_LEVEL
 
 from .analysis import (
-    calculate_signals, compare_vs_projection, current_phase, fetch_etf_data,
+    calculate_signals, compare_vs_projection, fetch_etf_data,
 )
 from .thresholds import PORTFOLIO
 from .email_sender import send_email
@@ -81,7 +81,6 @@ def main() -> int:
         )
         if proj:
             logger.info(f"         {t('etf.summary_vs_proj', year=proj['year'], dev=proj['deviation'])}")
-    logger.info(f"\n  {t('etf.summary_plan', phase=current_phase())}")
     return 0
 
 

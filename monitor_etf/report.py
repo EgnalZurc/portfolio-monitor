@@ -10,10 +10,10 @@ from shared.i18n import t
 from shared.timezone_utils import fmt_timestamp
 
 from .analysis import (
-    compare_vs_projection, current_contribution, current_phase,
+    compare_vs_projection, current_contribution,
     recommendation, years_since_start,
 )
-from .thresholds import PLAN
+from .thresholds import PLAN, PORTFOLIO
 from .fiscal import calculate_tax_impact
 from .models import AlertLevel
 
@@ -42,30 +42,6 @@ def _tax_block(tax: Optional[Dict[str, float]]) -> str:
         f'</table>'
         f'<p style="margin:10px 0 0;font-size:12px;color:#666">'
         f'{t("etf.ui.tax_set_aside", amount=tax["set_aside"])}</p></div>'
-    )
-
-
-def _projection_block(proj: Optional[Dict[str, Any]], accent: str) -> str:
-    """Render the plan projection tracking block."""
-    if not proj:
-        return ""
-    dev   = proj["deviation"]
-    year  = int(proj["year"])
-    color = "#1A7A4A" if dev >= 0 else "#C0392B"
-    bg    = "#E8F5E9" if dev >= 0 else "#FFF3CD"
-    emoji = "🚀" if dev > 0.10 else ("✅" if dev >= -0.10 else "⚠️")
-    sign  = "+" if dev >= 0 else ""
-    return (
-        f'<div style="background:{bg};border-radius:8px;padding:16px;margin-top:12px;border-left:4px solid {accent}">'
-        f'<h4 style="margin:0 0 10px;color:#1B2A4A;font-size:13px;text-transform:uppercase">{t("etf.ui.proj_title", year=year)}</h4>'
-        f'<table style="width:100%;font-size:13px;border-collapse:collapse">'
-        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.proj_expected", year=year)}</td>'
-        f'<td style="text-align:right;font-weight:600">{proj["expected"]:,.0f} €</td></tr>'
-        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.proj_actual")}</td>'
-        f'<td style="text-align:right;font-weight:600">{proj["actual"]:,.0f} €</td></tr>'
-        f'<tr><td style="color:#666;padding:3px 0"><strong>{t("etf.ui.proj_deviation")}</strong></td>'
-        f'<td style="text-align:right;font-weight:700;color:{color}">{emoji} {sign}{dev:.1%}</td></tr>'
-        f'</table></div>'
     )
 
 
@@ -124,7 +100,7 @@ def _detail_card(
     fund_id: str, cfg: Dict, data: Dict,
     fmt_pct: Callable, color_fn: Callable,
 ) -> str:
-    """Render the full detail card for a fund."""
+    """Render the full detail card for a fund, wrapped in a collapsible <details> element."""
     level         = data["level"]
     ma50_str      = f"{data['ma50']:.2f} €"  if data["ma50"]  else "—"
     ma200_str     = f"{data['ma200']:.2f} €" if data["ma200"] else "—"
@@ -135,8 +111,7 @@ def _detail_card(
     avg_cost_str  = f"{cfg['avg_cost']:.2f} €" if cfg["avg_cost"] else "—"
     rec_title, rec_body, rec_color = recommendation(level, cfg["name"])
 
-    tax  = calculate_tax_impact(cfg["units"], cfg["avg_cost"], data["price"])
-    proj = compare_vs_projection(fund_id, data["price"], cfg["units"], cfg["avg_cost"])
+    tax = calculate_tax_impact(cfg["units"], cfg["avg_cost"], data["price"])
 
     changes = "".join(
         f'<div style="background:#F5F8FF;border-radius:8px;padding:10px;text-align:center">'
@@ -150,11 +125,10 @@ def _detail_card(
             (t("etf.ui.chg_ytd"), data["chg_ytd"], fmt_pct(data["chg_ytd"])),
         ]
     )
-    return (
-        f'<div style="background:#fff;border-radius:12px;padding:28px;margin-bottom:20px;'
-        f'box-shadow:0 2px 12px rgba(0,0,0,0.08);border-left:5px solid {cfg["color"]}">'
-        f'<h3 style="margin:0 0 4px;color:#1B2A4A;font-size:18px">'
-        f'{_html.escape(fund_id)} — {_html.escape(cfg["name"])}</h3>'
+
+    inner = (
+        f'<div style="background:#fff;border-radius:0 0 12px 12px;padding:28px;'
+        f'box-shadow:0 2px 12px rgba(0,0,0,0.08);border-left:5px solid {cfg["color"]};border-top:none">'
         f'<p style="margin:0 0 20px;color:#888;font-size:12px">{_html.escape(cfg["isin"])} · {t("etf.ui.ter")}</p>'
         f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">{changes}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
@@ -182,7 +156,6 @@ def _detail_card(
         f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.monthly_contrib")}</td>'
         f'<td style="text-align:right;font-weight:600">{t("etf.ui.contrib_amount", amount=current_contribution(fund_id))}</td></tr>'
         f'</table></div></div>'
-        f'{_projection_block(proj, cfg["color"])}'
         f'{_tax_block(tax)}'
         f'<h4 style="margin:20px 0 10px;color:#1B2A4A;font-size:12px;text-transform:uppercase">{t("etf.ui.signals_header")}</h4>'
         f'{_signals_block(data["signals"])}'
@@ -190,6 +163,22 @@ def _detail_card(
         f'<strong style="color:{rec_color};font-size:14px">{_html.escape(rec_title)}</strong><br>'
         f'<p style="margin:6px 0 0;color:#333;font-size:13px;line-height:1.6">{_html.escape(rec_body)}</p>'
         f'</div></div>'
+    )
+
+    summary_style = (
+        f'list-style:none;cursor:pointer;background:#fff;border-radius:12px;padding:18px 24px;'
+        f'box-shadow:0 2px 12px rgba(0,0,0,0.08);border-left:5px solid {cfg["color"]};'
+        f'display:flex;justify-content:space-between;align-items:center;'
+        f'font-size:16px;font-weight:700;color:#1B2A4A;'
+    )
+    return (
+        f'<details style="margin-bottom:12px">'
+        f'<summary style="{summary_style}">'
+        f'<span>{_html.escape(fund_id)} — {_html.escape(cfg["name"])}</span>'
+        f'<span style="font-size:20px">{level.emoji} {level.label}</span>'
+        f'</summary>'
+        f'{inner}'
+        f'</details>'
     )
 
 
@@ -204,8 +193,8 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
     color_fn  = lambda v: "#1A7A4A" if v >= 0 else "#C0392B"
 
     # Total portfolio value block
-    total      = 0.0
-    fund_rows  = []
+    total     = 0.0
+    fund_rows = []
     for fund_id, (data, cfg) in results.items():
         val    = data["price"] * cfg["units"]
         total += val
@@ -221,7 +210,6 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
         f'border-radius:12px;padding:24px;margin-bottom:24px;box-shadow:0 4px 12px rgba(0,0,0,0.15)">'
         f'<p style="color:#8EA8C8;font-size:12px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">{t("etf.ui.total_title")}</p>'
         f'<div style="font-size:48px;font-weight:800;color:white;margin:0">{total:,.0f} €</div>'
-        f'<p style="color:#8EA8C8;font-size:12px;margin:8px 0 0">{t("etf.ui.updated", ts=_html.escape(timestamp))}</p>'
         f'<div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);'
         f'display:grid;grid-template-columns:repeat({min(len(fund_rows),2)},1fr);gap:12px;font-size:12px">'
         f'{fund_rows_html}</div></div>'
@@ -235,12 +223,11 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
     status_block = (
         f'<div style="background:#1B2A4A;border-radius:12px;padding:20px 24px;margin-bottom:8px">'
         f'<h2 style="color:white;font-size:16px;margin:0;text-transform:uppercase;letter-spacing:1px">'
-        f'{t("etf.ui.status_header")}</h2>'
-        f'<p style="color:#8EA8C8;font-size:13px;margin:4px 0 0">{timestamp}</p></div>'
+        f'{t("etf.ui.status_header")}</h2></div>'
         f'<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:32px">{status_cards}</div>'
     )
 
-    # Detailed analysis block
+    # Detailed analysis block — collapsible per fund
     detail_cards = "".join(
         _detail_card(fid, cfg, data, fmt_pct, color_fn)
         for fid, (data, cfg) in results.items()
@@ -248,64 +235,56 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
     detail_block = (
         f'<div style="background:#1B2A4A;border-radius:12px;padding:20px 24px;margin-bottom:8px">'
         f'<h2 style="color:white;font-size:16px;margin:0;text-transform:uppercase;letter-spacing:1px">'
-        f'{t("etf.ui.detail_header")}</h2></div>{detail_cards}'
+        f'{t("etf.ui.detail_header")}</h2></div>'
+        f'<div style="margin-bottom:32px">{detail_cards}</div>'
     )
 
-    # Investment plan block
-    today       = datetime.today()
-    is_phase2   = today >= PLAN["phase_change_date"]
-    months_left = max(0, int((PLAN["phase_change_date"] - today).days / 30.44))
-    phase2_date = PLAN["phase_change_date"].strftime("%B %Y")
-    year_num    = years_since_start()
-    total_val   = sum(d["price"] * c["units"] for d, c in results.values())
-    total_gain  = sum(
-        d["price"] * c["units"] - c["units"] * c["avg_cost"]
-        for d, c in results.values()
+    # Portfolio summary block (replaces investment plan block)
+    total_val    = sum(d["price"] * c["units"] for d, c in results.values())
+    total_cost   = sum(
+        c["units"] * c["avg_cost"]
+        for _, c in results.values()
         if c["avg_cost"] and c["units"] > 0
     )
-    milestone_total = sum(
-        PLAN["milestones"].get(min(year_num, 10), (0, 0))[i]
-        for i in range(len(results))
+    total_gain   = total_val - total_cost
+    first_start  = min(
+        (c["start_date"] for c in PORTFOLIO.values() if c.get("start_date")),
+        default="—"
     )
 
-    if is_phase2:
-        phase_block = (
-            f'<div style="background:#E8F5E9;border-radius:8px;padding:16px;border-left:4px solid #1A7A4A;margin-bottom:12px">'
-            f'<strong style="color:#1A7A4A;font-size:15px">{t("etf.ui.phase2_active")}</strong>'
-            f'<p style="margin:8px 0 0;font-size:13px;color:#333">{t("etf.ui.phase2_body")}</p></div>'
-        )
-    else:
-        bar = max(5, min(100, int((1 - months_left / 36) * 100)))
-        phase_block = (
-            f'<div style="background:#FFF3CD;border-radius:8px;padding:16px;border-left:4px solid #F0A500;margin-bottom:12px">'
-            f'<strong style="color:#856404;font-size:15px">{t("etf.ui.phase1_active")}</strong>'
-            f'<p style="margin:8px 0 0;font-size:13px;color:#333">{t("etf.ui.phase1_body", months=months_left, date=phase2_date)}</p>'
-            f'<div style="margin-top:12px;background:#E0E0E0;border-radius:99px;height:10px">'
-            f'<div style="background:#F0A500;width:{bar}%;height:10px;border-radius:99px"></div></div></div>'
-        )
-
-    contributions = "".join(
-        f'<tr><td style="color:#666;padding:3px 0">{fid}</td>'
-        f'<td style="text-align:right;font-weight:700">{t("etf.ui.contrib_amount", amount=current_contribution(fid))}</td></tr>'
+    contrib_rows = "".join(
+        f'<tr><td style="color:#666;padding:4px 0;font-size:14px">{fid}</td>'
+        f'<td style="text-align:right;font-weight:700;font-size:14px">'
+        f'{t("etf.ui.contrib_amount", amount=current_contribution(fid))}</td></tr>'
         for fid in results
     )
-    plan_block = (
+
+    summary_block = (
         f'<div style="background:#1B2A4A;border-radius:12px;padding:20px 24px;margin-bottom:8px">'
         f'<h2 style="color:white;font-size:16px;margin:0;text-transform:uppercase;letter-spacing:1px">'
-        f'{t("etf.ui.plan_header")}</h2></div>'
+        f'{t("etf.ui.portfolio_summary_header")}</h2></div>'
         f'<div style="background:#fff;border-radius:12px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.08)">'
-        f'{phase_block}'
-        f'<div style="background:#F5F8FF;border-radius:8px;padding:14px;margin-top:12px">'
-        f'<h4 style="margin:0 0 10px;font-size:12px;text-transform:uppercase;color:#1B2A4A">{t("etf.ui.milestone_header", year=min(year_num,10))}</h4>'
-        f'<table style="width:100%;font-size:13px;border-collapse:collapse">'
-        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.milestone_expected")}</td><td style="text-align:right;font-weight:700">{milestone_total:,.0f} €</td></tr>'
-        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.milestone_actual")}</td><td style="text-align:right;font-weight:700">{total_val:,.0f} €</td></tr>'
-        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.milestone_gain")}</td>'
-        f'<td style="text-align:right;font-weight:700;color:{color_fn(total_gain)}">{total_gain:+,.0f} €</td></tr>'
-        f'</table></div>'
-        f'<div style="margin-top:12px;background:#F5F8FF;border-radius:8px;padding:14px">'
-        f'<h4 style="margin:0 0 10px;font-size:12px;text-transform:uppercase;color:#1B2A4A">{t("etf.ui.contrib_header")}</h4>'
-        f'<table style="width:100%;font-size:13px;border-collapse:collapse">{contributions}</table></div></div>'
+        # Contributions — prominent
+        f'<h4 style="margin:0 0 12px;font-size:13px;text-transform:uppercase;color:#1B2A4A">{t("etf.ui.contrib_header")}</h4>'
+        f'<table style="width:100%;border-collapse:collapse;margin-bottom:20px">{contrib_rows}</table>'
+        # Portfolio totals
+        f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
+        f'<div style="background:#F5F8FF;border-radius:8px;padding:14px">'
+        f'<div style="font-size:10px;color:#888;text-transform:uppercase;margin-bottom:4px">{t("etf.ui.total_invested")}</div>'
+        f'<div style="font-size:18px;font-weight:700;color:#1B2A4A">{total_cost:,.0f} €</div>'
+        f'<div style="font-size:11px;color:#888;margin-top:4px">{t("etf.ui.since", date=first_start)}</div>'
+        f'</div>'
+        f'<div style="background:#F5F8FF;border-radius:8px;padding:14px">'
+        f'<div style="font-size:10px;color:#888;text-transform:uppercase;margin-bottom:4px">{t("etf.ui.current_value")}</div>'
+        f'<div style="font-size:18px;font-weight:700;color:#1B2A4A">{total_val:,.0f} €</div>'
+        f'</div>'
+        f'<div style="background:#F5F8FF;border-radius:8px;padding:14px">'
+        f'<div style="font-size:10px;color:#888;text-transform:uppercase;margin-bottom:4px">{t("etf.ui.total_gain_loss")}</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{color_fn(total_gain)}">{total_gain:+,.0f} €</div>'
+        f'<div style="font-size:11px;color:{color_fn(total_gain)};margin-top:4px">'
+        f'{fmt_pct(total_gain / total_cost) if total_cost > 0 else "—"}</div>'
+        f'</div>'
+        f'</div></div>'
     )
 
     disclaimer = (
@@ -324,22 +303,23 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #EEF3FA; color: #1B2A4A; }}
         code {{ background:#eee; padding:1px 5px; border-radius:3px; font-size:12px; }}
+        details > summary {{ user-select: none; }}
+        details > summary::-webkit-details-marker {{ display: none; }}
     </style>
 </head>
 <body>
 <div style="max-width:900px;margin:0 auto;padding:24px 16px">
     <div style="background:#1B2A4A;border-radius:12px;padding:24px 28px;margin-bottom:24px;color:white;
-                display:flex;justify-content:space-between;align-items:center">
+                display:flex;justify-content:space-between;align-items:flex-end">
         <div>
-            <h1 style="font-size:22px;margin-bottom:4px">{t("etf.ui.report_title")}</h1>
-            <p style="color:#8EA8C8;font-size:13px">{current_phase()}</p>
+            <h1 style="font-size:22px;margin-bottom:0">{t("etf.ui.report_title")}</h1>
         </div>
         <div style="text-align:right;color:#8EA8C8;font-size:12px">{timestamp}</div>
     </div>
     {total_block}
     {status_block}
     {detail_block}
-    {plan_block}
+    {summary_block}
     {disclaimer}
     <p style="text-align:center;color:#aaa;font-size:11px;margin-top:16px">monitor_etf</p>
 </div>
