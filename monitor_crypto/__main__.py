@@ -8,10 +8,12 @@ that may affect the decision to renew or exit a staking position.
 """
 import logging
 import sys
+import time
 from pathlib import Path
 
 from shared.i18n import t
 from shared.report_delivery import deliver_report
+from shared.settings import LOG_LEVEL
 
 from .api import get_fear_greed, get_market_data, get_ohlc, get_prices
 from .config import POSITIONS
@@ -19,31 +21,35 @@ from .email_sender import send_email
 from .report import generate_html
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
+_API_DELAY = 1.5  # seconds between CoinGecko requests (free tier rate limit)
+
 
 def main() -> int:
-    logger.info(t("crypto.fetching_prices"))
+    logger.warning(t("crypto.fetching_prices"))
     ids        = [pos["coingecko_id"] for pos in POSITIONS]
     price_data = get_prices(ids)
 
-    logger.info(t("crypto.fetching_market"))
+    logger.warning(t("crypto.fetching_market"))
     market_data_map: dict = {}
     ohlc_map: dict        = {}
     for pos in POSITIONS:
         cg_id = pos["coingecko_id"]
         if cg_id not in market_data_map:
+            time.sleep(_API_DELAY)
             market_data_map[cg_id] = get_market_data(cg_id)
+            time.sleep(_API_DELAY)
             ohlc_map[cg_id]        = get_ohlc(cg_id, days=30)
 
-    logger.info(t("crypto.fetching_fg"))
+    logger.warning(t("crypto.fetching_fg"))
     fear_greed_val, fear_greed_label = get_fear_greed()
 
-    logger.info(t("crypto.generating_html"))
+    logger.warning(t("crypto.generating_html"))
     html = generate_html(
         POSITIONS, price_data, market_data_map,
         ohlc_map, fear_greed_val, fear_greed_label,

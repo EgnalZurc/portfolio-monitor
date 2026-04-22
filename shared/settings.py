@@ -56,6 +56,10 @@ def _get(path: str, default: Any = None) -> Any:
 
 LANG: str = os.environ.get("MONITOR_LANG", _get("general.lang", "es")).lower()
 
+# Log level: "DEBUG" (verbose) or "WARNING" (quiet, CI default).
+# Override at runtime with the LOG_LEVEL environment variable.
+LOG_LEVEL: str = os.environ.get("LOG_LEVEL", _get("general.log_level", "INFO")).upper()
+
 
 # ---------------------------------------------------------------------------
 # Email — credentials come exclusively from environment variables / secrets

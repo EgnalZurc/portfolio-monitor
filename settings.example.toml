@@ -20,6 +20,10 @@
 # Override at runtime with the MONITOR_LANG environment variable.
 lang = "es"
 
+# Log verbosity: "WARNING" (quiet, CI default) or "DEBUG" (verbose, local dev)
+# Override at runtime with the LOG_LEVEL environment variable.
+log_level = "WARNING"
+
 
 # =============================================================================
 # ETF MONITOR

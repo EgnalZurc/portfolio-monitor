@@ -55,6 +55,7 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           MONITOR_LANG: es
+          LOG_LEVEL: WARNING
         run: python -m monitor_etf --no-browser
 
       - name: Run Crypto Staking Monitor
@@ -62,4 +63,5 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
           MONITOR_LANG: es
+          LOG_LEVEL: WARNING
         run: python -m monitor_crypto --no-browser
