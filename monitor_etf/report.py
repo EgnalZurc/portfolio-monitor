@@ -2,11 +2,12 @@
 monitor_etf/report.py — HTML report generation.
 """
 import html as _html
+import os
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from shared.i18n import t
-from shared.utils import fmt_fecha_madrid
+from shared.utils import fmt_timestamp
 
 from .analysis import (
     compare_vs_projection, current_contribution, current_phase,
@@ -154,7 +155,7 @@ def _detail_card(
         f'box-shadow:0 2px 12px rgba(0,0,0,0.08);border-left:5px solid {cfg["color"]}">'
         f'<h3 style="margin:0 0 4px;color:#1B2A4A;font-size:18px">'
         f'{_html.escape(fund_id)} — {_html.escape(cfg["name"])}</h3>'
-        f'<p style="margin:0 0 20px;color:#888;font-size:12px">{_html.escape(cfg["isin"])} · TER 0,15%</p>'
+        f'<p style="margin:0 0 20px;color:#888;font-size:12px">{_html.escape(cfg["isin"])} · {t("etf.ui.ter")}</p>'
         f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">{changes}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
         f'<div style="background:#F5F8FF;border-radius:8px;padding:14px">'
@@ -198,7 +199,7 @@ def _detail_card(
 
 def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> str:
     """Render the full ETF HTML report."""
-    timestamp = fmt_fecha_madrid()
+    timestamp = fmt_timestamp()
     fmt_pct   = lambda v: f"+{v:.2%}" if v >= 0 else f"{v:.2%}"
     color_fn  = lambda v: "#1A7A4A" if v >= 0 else "#C0392B"
 
@@ -314,7 +315,7 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
     )
 
     return f"""<!DOCTYPE html>
-<html lang="es">
+<html lang="{os.environ.get('MONITOR_LANG', 'es')}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

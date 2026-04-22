@@ -58,7 +58,7 @@ def main() -> int:
         logger.error(t("etf.error_writing", exc=e))
         return 1
 
-    output_path = Path(__file__).parent.parent / "informe_etf.html"
+    output_path = Path(__file__).parent.parent / "etf_report.html"
     deliver_report(html, output_path, send_email)
 
     # Print quick summary to stdout

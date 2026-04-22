@@ -299,6 +299,7 @@ _CATALOGUE: dict[str, dict[str, str]] = {
                                   "en": "Monthly contribution"},
     "etf.ui.contrib_amount":     {"es": "{amount:.0f} €/mes",
                                   "en": "{amount:.0f} €/mo"},
+    "etf.ui.ter":                {"es": "TER 0,15%", "en": "TER 0.15%"},
     "etf.ui.signals_header":     {"es": "Señales detectadas",
                                   "en": "Detected signals"},
     "etf.ui.chg_1d":             {"es": "1 día",   "en": "1 day"},

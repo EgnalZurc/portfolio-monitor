@@ -29,7 +29,7 @@ def now_madrid() -> datetime:
     return datetime.now(get_timezone())
 
 
-def fmt_fecha_madrid(dt: Optional[datetime] = None) -> str:
+def fmt_timestamp(dt: Optional[datetime] = None) -> str:
     """Format a datetime as a human-readable string in Madrid timezone."""
     if dt is None:
         dt = now_madrid()

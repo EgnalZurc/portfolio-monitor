@@ -2,6 +2,7 @@
 monitor_crypto/report.py — HTML report generation for the crypto monitor.
 """
 from datetime import datetime, timezone
+import os
 from typing import Any, Dict, List, Optional
 
 from shared.i18n import t
@@ -216,7 +217,7 @@ def generate_html(
     css = _CSS.replace("VAR_COLOR", header_color)
 
     return f"""<!DOCTYPE html>
-<html lang="es">
+<html lang="{os.environ.get('MONITOR_LANG', 'es')}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
