@@ -64,7 +64,7 @@ def main() -> int:
 
     # WARNING: one line per fund showing only alert level (no prices)
     for fund_id, (data, cfg) in results.items():
-        logger.warning(f"  {fund_id}: {_LEVEL_ICON[data['level']]} {data['level'].name}")
+        logger.debug(f"  {fund_id}: {_LEVEL_ICON[data['level']]} {data['level'].name}")
 
     # INFO: full detail with prices and performance
     logger.info("\n" + "=" * 50)
