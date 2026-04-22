@@ -1,6 +1,8 @@
 # Egnal Portfolio Monitor
 
-Daily monitors for ETF portfolios and cryptocurrency staking. They run automatically every weekday via GitHub Actions and send an HTML report by email.
+Daily automated monitors for **ETF portfolios** and **cryptocurrency staking positions**. They run automatically every weekday via GitHub Actions and send an HTML report by email.
+
+**Crypto monitor focus:** This monitor is specifically designed for tracking staking positions (flexible and fixed-term products). It shows days until redemption, daily/accumulated staking rewards, and market signals relevant to staking renewal decisions.
 
 ---
 
@@ -15,7 +17,7 @@ control/
 │   ├── config.py          Re-exports from shared/settings.py
 │   ├── email_sender.py    Email delivery
 │   ├── fiscal.py          IRPF tax calculation
-│   ├── models.py          NivelAlerta enum
+│   ├── models.py          AlertLevel enum
 │   └── report.py          HTML report generation
 ├── monitor_crypto/
 │   ├── __main__.py        Entry point
@@ -86,13 +88,13 @@ One block per ETF. Add as many blocks as you need.
 
 ```toml
 [[etf.funds]]
-id               = "IUIT"
-ticker           = "IUIT.L"
-name             = "iShares S&P 500 IT Sector UCITS ETF"
-isin             = "IE00B3WJKG14"
-precio_medio     = 32.50
-participaciones  = 25.8822
-aportacion_mes   = 50.0
+id               = "FUND1"
+ticker           = "FUND1.L"
+name             = "Example ETF Fund"
+isin             = "IE00XXXXXXXX"
+precio_medio     = 0.0
+participaciones  = 0.0
+aportacion_mes   = 100.0
 aportacion_fase2 = 500.0
 inicio           = "2024-01-01"
 color            = "#3A7BD5"
@@ -133,9 +135,9 @@ phase_change_date = "2027-03-01"
 **Milestone example with 3 funds:**
 ```toml
 [etf.plan.milestones]
-# year = [IUIT_eur, IWDA_eur, VWCE_eur]
-1  = [1_800, 1_257, 500]
-2  = [3_352, 3_643, 1_200]
+# year = [FUND1_eur, FUND2_eur, FUND3_eur]
+1  = [1_000,  1_000,   500]
+2  = [3_000,  3_000, 1_200]
 ```
 
 ---
@@ -181,13 +183,13 @@ critical_threshold  = -0.20
 
 ### [[crypto.positions]]
 
-One block per staking position. Add as many blocks as you need.
+One block per **staking position**. The crypto monitor is focused exclusively on staking — it tracks days until redemption, accumulated rewards, and market signals relevant to renewal decisions. Add as many blocks as you need.
 
 ```toml
 [[crypto.positions]]
 symbol                 = "ETH"
 name                   = "Ethereum"
-amount                 = 0.17130007
+amount                 = 0.0
 product                = "Flexible Stake"
 apy                    = 2.14
 type                   = "flexible"
@@ -285,13 +287,15 @@ The order must match the order of `[[etf.funds]]` blocks:
 
 ---
 
-## How to add a new crypto position
+## How to add a new crypto staking position
 
 **1. Find the CoinGecko ID**
 
 Go to [coingecko.com](https://www.coingecko.com), search for the asset,
 and copy the last segment of the URL:
 `https://www.coingecko.com/en/coins/ethereum` → ID is `ethereum`.
+
+**Note:** This monitor tracks staking positions only. It is not a general trading monitor.
 
 **2. Add a block to settings.toml**
 

@@ -18,7 +18,8 @@ venv/
 dist/
 build/
 
-# IDE
+# IDE and local tooling
 .vscode/
 .idea/
+.amazonq/
 *.swp
