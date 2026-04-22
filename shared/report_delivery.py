@@ -26,7 +26,7 @@ _GENERATE_HTML_FLAG = "--generate-html"
 
 def _email_configured() -> bool:
     """Return True if Gmail credentials are available."""
-    return bool(EMAIL_CONFIG["gmail_user"] and EMAIL_CONFIG["gmail_pass"])
+    return bool(EMAIL_CONFIG["user"] and EMAIL_CONFIG["password"])
 
 
 def _save_to_disk(html: str, path: Path) -> bool:

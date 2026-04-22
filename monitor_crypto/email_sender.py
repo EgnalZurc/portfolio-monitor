@@ -20,12 +20,12 @@ def send_email(html_content: str) -> None:
         date = datetime.now(timezone.utc).strftime("%d/%m/%Y")
         msg  = MIMEMultipart("alternative")
         msg["Subject"] = t("email.subject_crypto", date=date)
-        msg["From"]    = EMAIL_CONFIG["gmail_user"]
-        msg["To"]      = EMAIL_CONFIG["to_email"]
+        msg["From"]    = EMAIL_CONFIG["user"]
+        msg["To"]      = EMAIL_CONFIG["recipient"]
         msg.attach(MIMEText(html_content, "html", "utf-8"))
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(EMAIL_CONFIG["gmail_user"], EMAIL_CONFIG["gmail_pass"])
-            server.sendmail(EMAIL_CONFIG["gmail_user"], EMAIL_CONFIG["to_email"], msg.as_string())
+            server.login(EMAIL_CONFIG["user"], EMAIL_CONFIG["password"])
+            server.sendmail(EMAIL_CONFIG["user"], EMAIL_CONFIG["recipient"], msg.as_string())
         logger.info(t("email.sent"))
     except smtplib.SMTPAuthenticationError as e:
         logger.error(t("email.error_auth", exc=e))

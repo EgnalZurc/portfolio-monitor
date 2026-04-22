@@ -88,18 +88,17 @@ def _status_card(
 ) -> str:
     """Render the compact status card for a fund."""
     level         = data["level"]
-    portfolio_val = data["price"] * cfg["participaciones"]
-    gain_eur      = (portfolio_val - cfg["participaciones"] * cfg["precio_medio"]) \
-                    if cfg["precio_medio"] and cfg["participaciones"] > 0 else 0
+    portfolio_val = data["price"] * cfg["units"]
+    gain_eur      = (portfolio_val - cfg["units"] * cfg["avg_cost"]) \
+                    if cfg["avg_cost"] and cfg["units"] > 0 else 0
     gain_pct      = data["pct_vs_cost"] if data["pct_vs_cost"] is not None else 0
-    rec_title, _, rec_color = recommendation(level, cfg["nombre"])
+    rec_title, _, rec_color = recommendation(level, cfg["name"])
     return (
         f'<div style="flex:1;min-width:280px;background:#fff;border-radius:12px;padding:24px;'
         f'box-shadow:0 2px 12px rgba(0,0,0,0.08);border-top:5px solid {cfg["color"]}">'
         f'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">'
         f'<div><h2 style="margin:0;color:#1B2A4A;font-size:20px">{_html.escape(fund_id)}</h2>'
         f'<p style="margin:3px 0 0;color:#888;font-size:12px">{_html.escape(cfg["isin"])}</p></div>'
-        f'<div style="background:{level.background};border:2px solid {level.color};border-radius:8px;padding:6px 12px;text-align:center">'
         f'<div style="font-size:18px">{level.emoji}</div>'
         f'<div style="font-size:11px;font-weight:700;color:{level.color}">{level.label}</div></div></div>'
         f'<div style="font-size:30px;font-weight:700;color:#1B2A4A;margin-bottom:4px">{data["price"]:.2f} €</div>'
@@ -127,15 +126,15 @@ def _detail_card(
     level         = data["level"]
     ma50_str      = f"{data['ma50']:.2f} €"  if data["ma50"]  else "—"
     ma200_str     = f"{data['ma200']:.2f} €" if data["ma200"] else "—"
-    portfolio_val = data["price"] * cfg["participaciones"]
-    gain_eur      = (portfolio_val - cfg["participaciones"] * cfg["precio_medio"]) \
-                    if cfg["precio_medio"] and cfg["participaciones"] > 0 else 0
+    portfolio_val = data["price"] * cfg["units"]
+    gain_eur      = (portfolio_val - cfg["units"] * cfg["avg_cost"]) \
+                    if cfg["avg_cost"] and cfg["units"] > 0 else 0
     gain_pct      = data["pct_vs_cost"] if data["pct_vs_cost"] is not None else 0
-    avg_cost_str  = f"{cfg['precio_medio']:.2f} €" if cfg["precio_medio"] else "—"
-    rec_title, rec_body, rec_color = recommendation(level, cfg["nombre"])
+    avg_cost_str  = f"{cfg['avg_cost']:.2f} €" if cfg["avg_cost"] else "—"
+    rec_title, rec_body, rec_color = recommendation(level, cfg["name"])
 
-    tax  = calculate_tax_impact(cfg["participaciones"], cfg["precio_medio"], data["price"])
-    proj = compare_vs_projection(fund_id, data["price"], cfg["participaciones"], cfg["precio_medio"])
+    tax  = calculate_tax_impact(cfg["units"], cfg["avg_cost"], data["price"])
+    proj = compare_vs_projection(fund_id, data["price"], cfg["units"], cfg["avg_cost"])
 
     changes = "".join(
         f'<div style="background:#F5F8FF;border-radius:8px;padding:10px;text-align:center">'
@@ -153,7 +152,7 @@ def _detail_card(
         f'<div style="background:#fff;border-radius:12px;padding:28px;margin-bottom:20px;'
         f'box-shadow:0 2px 12px rgba(0,0,0,0.08);border-left:5px solid {cfg["color"]}">'
         f'<h3 style="margin:0 0 4px;color:#1B2A4A;font-size:18px">'
-        f'{_html.escape(fund_id)} — {_html.escape(cfg["nombre"])}</h3>'
+        f'{_html.escape(fund_id)} — {_html.escape(cfg["name"])}</h3>'
         f'<p style="margin:0 0 20px;color:#888;font-size:12px">{_html.escape(cfg["isin"])} · TER 0,15%</p>'
         f'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">{changes}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
@@ -171,7 +170,7 @@ def _detail_card(
         f'<div style="background:#F5F8FF;border-radius:8px;padding:14px">'
         f'<h4 style="margin:0 0 10px;color:#1B2A4A;font-size:12px;text-transform:uppercase">{t("etf.ui.position")}</h4>'
         f'<table style="width:100%;font-size:13px;border-collapse:collapse">'
-        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.units")}</td><td style="text-align:right;font-weight:600">{cfg["participaciones"]:.4f}</td></tr>'
+        f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.units")}</td><td style="text-align:right;font-weight:600">{cfg["units"]:.4f}</td></tr>'
         f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.avg_cost")}</td><td style="text-align:right;font-weight:600">{avg_cost_str}</td></tr>'
         f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.current_value")}</td><td style="text-align:right;font-weight:600">{portfolio_val:,.2f} €</td></tr>'
         f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.gain_eur")}</td>'
@@ -179,7 +178,7 @@ def _detail_card(
         f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.gain_pct")}</td>'
         f'<td style="text-align:right;font-weight:600;color:{color_fn(gain_pct)}">{fmt_pct(gain_pct)}</td></tr>'
         f'<tr><td style="color:#666;padding:3px 0">{t("etf.ui.monthly_contrib")}</td>'
-        f'<td style="text-align:right;font-weight:600">{current_contribution(fund_id):.0f} €/mes</td></tr>'
+        f'<td style="text-align:right;font-weight:600">{t("etf.ui.contrib_amount", amount=current_contribution(fund_id))}</td></tr>'
         f'</table></div></div>'
         f'{_projection_block(proj, cfg["color"])}'
         f'{_tax_block(tax)}'
@@ -256,11 +255,11 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
     months_left = max(0, int((PLAN["fecha_cambio_fase"] - today).days / 30.44))
     phase2_date = PLAN["fecha_cambio_fase"].strftime("%B %Y")
     year_num    = years_since_start()
-    total_val   = sum(d["price"] * c["participaciones"] for d, c in results.values())
+    total_val   = sum(d["price"] * c["units"] for d, c in results.values())
     total_gain  = sum(
-        d["price"] * c["participaciones"] - c["participaciones"] * c["precio_medio"]
+        d["price"] * c["units"] - c["units"] * c["avg_cost"]
         for d, c in results.values()
-        if c["precio_medio"] and c["participaciones"] > 0
+        if c["avg_cost"] and c["units"] > 0
     )
     milestone_total = sum(
         PLAN["hitos"].get(min(year_num, 10), (0, 0))[i]
@@ -285,7 +284,7 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
 
     contributions = "".join(
         f'<tr><td style="color:#666;padding:3px 0">{fid}</td>'
-        f'<td style="text-align:right;font-weight:700">{current_contribution(fid):.0f} €/mes</td></tr>'
+        f'<td style="text-align:right;font-weight:700">{t("etf.ui.contrib_amount", amount=current_contribution(fid))}</td></tr>'
         for fid in results
     )
     plan_block = (

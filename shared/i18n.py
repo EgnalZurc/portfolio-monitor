@@ -238,6 +238,12 @@ _CATALOGUE: dict[str, dict[str, str]] = {
     "email.no_creds_crypto":    {"es": "GMAIL_USER / GMAIL_PASS no definidos — saltando envío.",
                                  "en": "GMAIL_USER / GMAIL_PASS not set — skipping email."},
 
+    # Alert level labels (user-facing, go through i18n)
+    "alert.ok":     {"es": "EN ORDEN",    "en": "ON TRACK"},
+    "alert.info":   {"es": "INFORMATIVO", "en": "INFO"},
+    "alert.warn":   {"es": "CORRECCIÓN",  "en": "CORRECTION"},
+    "alert.danger": {"es": "REVISAR",     "en": "REVIEW"},
+
     # Shared delivery
     "delivery.saved":            {"es": "✅ Informe guardado: {path}",
                                   "en": "✅ Report saved: {path}"},
@@ -291,6 +297,10 @@ _CATALOGUE: dict[str, dict[str, str]] = {
                                   "en": "Gain/loss %"},
     "etf.ui.monthly_contrib":    {"es": "Aportación mensual",
                                   "en": "Monthly contribution"},
+    "etf.ui.contrib_amount":     {"es": "{amount:.0f} €/mes",
+                                  "en": "{amount:.0f} €/mo"},
+    "etf.ui.contrib_per_month":   {"es": "{amount:.0f} €/mes",
+                                  "en": "{amount:.0f} €/mo"},
     "etf.ui.signals_header":     {"es": "Señales detectadas",
                                   "en": "Detected signals"},
     "etf.ui.chg_1d":             {"es": "1 día",   "en": "1 day"},

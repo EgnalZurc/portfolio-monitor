@@ -3,13 +3,15 @@ monitor_etf/models.py — Enumerations and types for the ETF monitor.
 """
 from enum import Enum
 
+from shared.i18n import t
+
 
 class AlertLevel(Enum):
     """Alert levels with associated display properties."""
-    OK     = ("OK",     "#1A7A4A", "#E8F5E9", "EN ORDEN",    "✅")
-    INFO   = ("INFO",   "#3A7BD5", "#E8F0FB", "INFORMATIVO", "ℹ️")
-    WARN   = ("WARN",   "#F0A500", "#FFF3CD", "CORRECCIÓN",  "⚠️")
-    DANGER = ("DANGER", "#C0392B", "#FDECEA", "REVISAR",     "🚨")
+    OK     = ("OK",     "#1A7A4A", "#E8F5E9", "alert.ok",     "✅")
+    INFO   = ("INFO",   "#3A7BD5", "#E8F0FB", "alert.info",   "ℹ️")
+    WARN   = ("WARN",   "#F0A500", "#FFF3CD", "alert.warn",   "⚠️")
+    DANGER = ("DANGER", "#C0392B", "#FDECEA", "alert.danger", "🚨")
 
     @property
     def color(self) -> str:
@@ -21,7 +23,8 @@ class AlertLevel(Enum):
 
     @property
     def label(self) -> str:
-        return self.value[3]
+        """Return the translated label for the current language."""
+        return t(self.value[3])
 
     @property
     def emoji(self) -> str:

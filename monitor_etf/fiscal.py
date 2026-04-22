@@ -12,7 +12,7 @@ def calculate_tax(gain: float) -> float:
         return 0.0
     total     = 0.0
     remaining = gain
-    for limit, rate in PLAN["irpf_tramos"]:
+    for limit, rate in PLAN["tax_brackets"]:
         amount     = min(remaining, limit)
         total     += amount * rate
         remaining -= amount

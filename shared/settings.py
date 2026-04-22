@@ -66,16 +66,11 @@ _gmail_pass = os.environ.get("GMAIL_PASS", "").strip()
 _to_email   = os.environ.get("TO_EMAIL",   _gmail_user).strip()
 
 EMAIL_CONFIG: Dict[str, Any] = {
-    "smtp_server":  "smtp.gmail.com",
-    "smtp_port":    465,
-    # ETF monitor keys
-    "usuario":      _gmail_user,
-    "password":     _gmail_pass,
-    "destinatario": _to_email,
-    # Crypto monitor keys
-    "gmail_user":   _gmail_user,
-    "gmail_pass":   _gmail_pass,
-    "to_email":     _to_email,
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port":   465,
+    "user":        _gmail_user,
+    "password":    _gmail_pass,
+    "recipient":   _to_email,
 }
 
 
@@ -83,33 +78,33 @@ EMAIL_CONFIG: Dict[str, Any] = {
 # ETF — Portfolio  (built dynamically from [[etf.funds]] array)
 # ---------------------------------------------------------------------------
 
-def _build_etf_entry(raw: Dict[str, Any]) -> Dict[str, Any]:
+def _build_fund_entry(raw: Dict[str, Any]) -> Dict[str, Any]:
     """Convert one [[etf.funds]] TOML entry into the runtime dict."""
-    inicio       = raw.get("inicio", "").strip()
-    precio_medio = raw.get("precio_medio", 0.0)
+    start_date  = raw.get("inicio", "").strip()
+    avg_cost    = raw.get("precio_medio", 0.0)
     return {
-        "ticker":           raw.get("ticker",           ""),
-        "nombre":           raw.get("name",             raw.get("id", "")),
-        "isin":             raw.get("isin",             ""),
-        "precio_medio":     precio_medio if precio_medio > 0 else None,
-        "participaciones":  raw.get("participaciones",  0.0),
-        "aportacion_mes":   raw.get("aportacion_mes",   0.0),
-        "aportacion_fase2": raw.get("aportacion_fase2", 0.0),
-        "inicio":           inicio or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "color":            raw.get("color",            "#3A7BD5"),
+        "ticker":            raw.get("ticker",           ""),
+        "name":              raw.get("name",             raw.get("id", "")),
+        "isin":              raw.get("isin",             ""),
+        "avg_cost":          avg_cost if avg_cost > 0 else None,
+        "units":             raw.get("participaciones",  0.0),
+        "monthly_contrib":   raw.get("aportacion_mes",   0.0),
+        "phase2_contrib":    raw.get("aportacion_fase2", 0.0),
+        "start_date":        start_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "color":             raw.get("color",            "#3A7BD5"),
     }
 
 
-# CARTERA is an ordered dict keyed by the fund's id field.
+# PORTFOLIO is an ordered dict keyed by the fund's id field.
 # Adding a new [[etf.funds]] block in settings.toml is all that is needed.
-CARTERA: Dict[str, Dict[str, Any]] = {
-    fund["id"]: _build_etf_entry(fund)
+PORTFOLIO: Dict[str, Dict[str, Any]] = {
+    fund["id"]: _build_fund_entry(fund)
     for fund in _get("etf.funds", [])
     if "id" in fund
 }
 
 # Ordered list of fund IDs — used to map milestone tuples by position
-_FUND_IDS: List[str] = list(CARTERA.keys())
+FUND_IDS: List[str] = list(PORTFOLIO.keys())
 
 
 # ---------------------------------------------------------------------------
@@ -120,13 +115,13 @@ _plan_raw   = _get("etf.plan", {})
 _milestones = _get("etf.plan.milestones", {})
 
 PLAN: Dict[str, Any] = {
-    "fecha_cambio_fase": datetime.fromisoformat(
+    "phase_change_date": datetime.fromisoformat(
         _plan_raw.get("phase_change_date", "2027-03-01")
     ),
-    # Milestones keyed by int year; values are tuples matching _FUND_IDS order
-    "hitos": {int(k): tuple(v) for k, v in _milestones.items()},
+    # Milestones keyed by int year; values are tuples matching FUND_IDS order
+    "milestones": {int(k): tuple(v) for k, v in _milestones.items()},
     # IRPF tax brackets — sentinel 999_999_999 becomes float("inf")
-    "irpf_tramos": [
+    "tax_brackets": [
         (float("inf") if limit >= 999_999_999 else float(limit), rate)
         for limit, rate in _get("etf.tax.brackets", [])
     ],
@@ -139,11 +134,11 @@ PLAN: Dict[str, Any] = {
 
 _thr = _get("etf.thresholds", {})
 
-MM_CORTA:               int   = _thr.get("ma_short",            50)
-MM_LARGA:               int   = _thr.get("ma_long",             200)
-ALERTA_CAIDA_DESDE_MAX: float = _thr.get("drop_from_high_warn", -0.15)
-ALERTA_PERDIDA_REAL:    float = _thr.get("loss_vs_cost_warn",   -0.10)
-ALERTA_VENTA_CRITICA:   float = _thr.get("critical_threshold",  -0.20)
+MA_SHORT:              int   = _thr.get("ma_short",            50)
+MA_LONG:               int   = _thr.get("ma_long",             200)
+DROP_FROM_HIGH_WARN:   float = _thr.get("drop_from_high_warn", -0.15)
+LOSS_VS_COST_WARN:     float = _thr.get("loss_vs_cost_warn",   -0.10)
+CRITICAL_THRESHOLD:    float = _thr.get("critical_threshold",  -0.20)
 
 
 # ---------------------------------------------------------------------------

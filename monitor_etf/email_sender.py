@@ -18,12 +18,12 @@ def send_email(html_content: str) -> None:
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = t("email.subject_etf")
-        msg["From"]    = EMAIL_CONFIG["usuario"]
-        msg["To"]      = EMAIL_CONFIG["destinatario"]
+        msg["From"]    = EMAIL_CONFIG["user"]
+        msg["To"]      = EMAIL_CONFIG["recipient"]
         msg.attach(MIMEText(html_content, "html", "utf-8"))
         with smtplib.SMTP_SSL(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"], timeout=10) as server:
-            server.login(EMAIL_CONFIG["usuario"], EMAIL_CONFIG["password"])
-            server.sendmail(EMAIL_CONFIG["usuario"], EMAIL_CONFIG["destinatario"], msg.as_string())
+            server.login(EMAIL_CONFIG["user"], EMAIL_CONFIG["password"])
+            server.sendmail(EMAIL_CONFIG["user"], EMAIL_CONFIG["recipient"], msg.as_string())
         logger.info(t("email.sent"))
     except smtplib.SMTPAuthenticationError as e:
         logger.error(t("email.error_auth", exc=e))

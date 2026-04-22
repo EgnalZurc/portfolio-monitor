@@ -11,7 +11,7 @@ from shared.report_delivery import deliver_report
 from .analysis import (
     calculate_signals, compare_vs_projection, current_phase, fetch_etf_data,
 )
-from .config import CARTERA
+from .config import PORTFOLIO
 from .email_sender import send_email
 from .models import AlertLevel
 from .report import build_report
@@ -35,11 +35,11 @@ def main() -> int:
     logger.info(t("etf.downloading"))
     results = {}
 
-    for fund_id, cfg in CARTERA.items():
+    for fund_id, cfg in PORTFOLIO.items():
         logger.info(t("etf.processing", etf_id=fund_id, ticker=cfg["ticker"]))
         try:
             hist, _ = fetch_etf_data(cfg["ticker"])
-            data    = calculate_signals(hist, cfg["precio_medio"])
+            data    = calculate_signals(hist, cfg["avg_cost"])
             results[fund_id] = (data, cfg)
             logger.info(f"    {data['price']:.2f}€  "
                         f"{_LEVEL_ICON[data['level']]} {data['level'].name}")
@@ -72,7 +72,7 @@ def main() -> int:
             label = t("etf.summary_gain") if data["pct_vs_cost"] >= 0 else t("etf.summary_loss")
             logger.info(f"         {t('etf.summary_perf', label=label, pct=data['pct_vs_cost'])}")
         proj = compare_vs_projection(
-            fund_id, data["price"], cfg["participaciones"], cfg["precio_medio"]
+            fund_id, data["price"], cfg["units"], cfg["avg_cost"]
         )
         if proj:
             logger.info(f"         {t('etf.summary_vs_proj', year=proj['year'], dev=proj['deviation'])}")

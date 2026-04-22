@@ -13,8 +13,8 @@ import yfinance as yf
 from shared.i18n import t
 
 from .config import (
-    ALERTA_CAIDA_DESDE_MAX, ALERTA_PERDIDA_REAL, ALERTA_VENTA_CRITICA,
-    CARTERA, MM_CORTA, MM_LARGA, PLAN,
+    CRITICAL_THRESHOLD, DROP_FROM_HIGH_WARN, FUND_IDS,
+    LOSS_VS_COST_WARN, MA_LONG, MA_SHORT, PLAN, PORTFOLIO,
 )
 from .models import AlertLevel
 
@@ -28,24 +28,24 @@ logger = logging.getLogger(__name__)
 def current_phase() -> str:
     """Return the current investment phase label (translated)."""
     today = datetime.today()
-    if today >= PLAN["fecha_cambio_fase"]:
+    if today >= PLAN["phase_change_date"]:
         return t("etf.phase2")
-    months = int((PLAN["fecha_cambio_fase"] - today).days / 30.44)
+    months = int((PLAN["phase_change_date"] - today).days / 30.44)
     return t("etf.phase1", months=months)
 
 
 def current_contribution(fund_id: str) -> float:
     """Return the active monthly contribution for a fund."""
-    cfg = CARTERA.get(fund_id, {})
-    if datetime.today() >= PLAN["fecha_cambio_fase"]:
-        return cfg.get("aportacion_fase2", 0.0)
-    return cfg.get("aportacion_mes", 0.0)
+    cfg = PORTFOLIO.get(fund_id, {})
+    if datetime.today() >= PLAN["phase_change_date"]:
+        return cfg.get("phase2_contrib", 0.0)
+    return cfg.get("monthly_contrib", 0.0)
 
 
 def years_since_start() -> int:
     """Return years elapsed since the first ETF purchase."""
     try:
-        start = datetime.fromisoformat(list(CARTERA.values())[0]["inicio"])
+        start = datetime.fromisoformat(list(PORTFOLIO.values())[0]["start_date"])
         return max(1, round((datetime.today() - start).days / 365))
     except (ValueError, KeyError, IndexError) as e:
         logger.warning(t("etf.error_years", exc=e))
@@ -55,13 +55,12 @@ def years_since_start() -> int:
 def projected_milestone(fund_id: str) -> Optional[float]:
     """Return the projected EUR milestone for the current year."""
     try:
-        from shared.settings import _FUND_IDS
-        milestones  = PLAN["hitos"]
-        year        = min(years_since_start(), max(milestones.keys()))
-        milestone   = milestones.get(year)
+        milestones = PLAN["milestones"]
+        year       = min(years_since_start(), max(milestones.keys()))
+        milestone  = milestones.get(year)
         if milestone is None:
             return None
-        idx = _FUND_IDS.index(fund_id) if fund_id in _FUND_IDS else 0
+        idx = FUND_IDS.index(fund_id) if fund_id in FUND_IDS else 0
         return milestone[idx] if idx < len(milestone) else None
     except (KeyError, IndexError, TypeError, ValueError) as e:
         logger.warning(t("etf.error_hito", etf_id=fund_id, exc=e))
@@ -134,8 +133,8 @@ def _analyse_moving_averages(
     else:
         signals.append((t("signal.mm_ok.title"), t("signal.mm_ok.body", price=price, mm50=ma50, mm200=ma200), "OK"))
     try:
-        prev_ma50  = float(hist["Close"].rolling(MM_CORTA).mean().iloc[-2]) if len(hist) > MM_CORTA else None
-        prev_ma200 = float(hist["Close"].rolling(MM_LARGA).mean().iloc[-2]) if len(hist) > MM_LARGA else None
+        prev_ma50  = float(hist["Close"].rolling(MA_SHORT).mean().iloc[-2]) if len(hist) > MA_SHORT else None
+        prev_ma200 = float(hist["Close"].rolling(MA_LONG).mean().iloc[-2])  if len(hist) > MA_LONG  else None
         if prev_ma50 and prev_ma200:
             if prev_ma50 <= prev_ma200 and ma50 > ma200:
                 signals.append((t("signal.golden.title"), t("signal.golden.body"), "INFO"))
@@ -157,18 +156,18 @@ def _analyse_drawdown_and_cost(
     level: AlertLevel,
 ) -> Tuple[List, AlertLevel]:
     """Analyse drawdown from 52-week high and position vs average cost."""
-    if drawdown < ALERTA_VENTA_CRITICA:
+    if drawdown < CRITICAL_THRESHOLD:
         signals.append((t("signal.drop_severe.title"), t("signal.drop_severe.body", pct=drawdown, high=high_52w), "DANGER"))
         level = AlertLevel.DANGER
-    elif drawdown < ALERTA_CAIDA_DESDE_MAX:
+    elif drawdown < DROP_FROM_HIGH_WARN:
         signals.append((t("signal.drop_warn.title"), t("signal.drop_warn.body", pct=drawdown, high=high_52w), "WARN"))
         level = level.escalate(AlertLevel.WARN)
     if avg_cost and avg_cost > 0:
         pct = (price / avg_cost) - 1
-        if pct < ALERTA_VENTA_CRITICA:
+        if pct < CRITICAL_THRESHOLD:
             signals.append((t("signal.loss_crit.title"), t("signal.loss_crit.body", pct=pct, avg=avg_cost), "DANGER"))
             level = AlertLevel.DANGER
-        elif pct < ALERTA_PERDIDA_REAL:
+        elif pct < LOSS_VS_COST_WARN:
             signals.append((t("signal.loss_warn.title"), t("signal.loss_warn.body", pct=pct, avg=avg_cost), "WARN"))
             level = level.escalate(AlertLevel.WARN)
         elif pct >= 0:
@@ -193,7 +192,7 @@ def calculate_signals(
         return empty
 
     # Extend history if needed to compute long-term MA
-    if len(hist) < MM_LARGA:
+    if len(hist) < MA_LONG:
         try:
             ext = yf.Ticker(hist.index.name or "").history(period="2y")
             if not ext.empty and len(ext) > len(hist):
@@ -201,13 +200,13 @@ def calculate_signals(
         except Exception as e:
             logger.debug(f"Could not extend history: {e}")
 
-    price   = float(hist["Close"].iloc[-1])
+    price    = float(hist["Close"].iloc[-1])
     high_52w = float(hist["High"].max())
     low_52w  = float(hist["Low"].min())
 
-    chg_1d  = (hist["Close"].iloc[-1] / hist["Close"].iloc[-2]  - 1) if len(hist) > 1  else 0
-    chg_1m  = (hist["Close"].iloc[-1] / hist["Close"].iloc[-22] - 1) if len(hist) > 22 else 0
-    chg_3m  = (hist["Close"].iloc[-1] / hist["Close"].iloc[-66] - 1) if len(hist) > 66 else 0
+    chg_1d = (hist["Close"].iloc[-1] / hist["Close"].iloc[-2]  - 1) if len(hist) > 1  else 0
+    chg_1m = (hist["Close"].iloc[-1] / hist["Close"].iloc[-22] - 1) if len(hist) > 22 else 0
+    chg_3m = (hist["Close"].iloc[-1] / hist["Close"].iloc[-66] - 1) if len(hist) > 66 else 0
 
     # Year-to-date return
     try:
@@ -219,8 +218,8 @@ def calculate_signals(
         chg_ytd = 0
 
     # Moving averages
-    _v50  = hist["Close"].rolling(MM_CORTA).mean().iloc[-1] if len(hist) >= MM_CORTA else None
-    _v200 = hist["Close"].rolling(MM_LARGA).mean().iloc[-1] if len(hist) >= MM_LARGA else None
+    _v50  = hist["Close"].rolling(MA_SHORT).mean().iloc[-1] if len(hist) >= MA_SHORT else None
+    _v200 = hist["Close"].rolling(MA_LONG).mean().iloc[-1]  if len(hist) >= MA_LONG  else None
     ma50  = float(_v50)  if _v50  is not None and not pd.isna(_v50)  else None
     ma200 = float(_v200) if _v200 is not None and not pd.isna(_v200) else None
     drawdown = (price / high_52w) - 1 if high_52w > 0 else 0
