@@ -2,14 +2,33 @@
 monitor_crypto/api.py — External API calls (CoinGecko, Fear & Greed).
 """
 import logging
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
 from shared.i18n import t
 
-logger   = logging.getLogger(__name__)
-_TIMEOUT = 10
+logger    = logging.getLogger(__name__)
+_TIMEOUT  = 10
+_RETRIES  = 4
+_BACKOFF  = 2.0  # seconds; doubles on each retry: 2, 4, 8, 16
+
+
+def _get(url: str) -> requests.Response:
+    """GET with exponential backoff retry on 429 / 5xx."""
+    delay = _BACKOFF
+    for attempt in range(1, _RETRIES + 1):
+        r = requests.get(url, timeout=_TIMEOUT)
+        if r.status_code == 429:
+            logger.debug(f"Rate limited, retrying in {delay:.0f}s (attempt {attempt}/{_RETRIES})")
+            time.sleep(delay)
+            delay *= 2
+            continue
+        r.raise_for_status()
+        return r
+    r.raise_for_status()
+    return r  # unreachable; satisfies type checker
 
 
 def get_prices(coingecko_ids: List[str]) -> Dict[str, Any]:
@@ -21,9 +40,7 @@ def get_prices(coingecko_ids: List[str]) -> Dict[str, Any]:
         f"&include_24hr_change=true&include_7d_change=true&include_market_cap=true"
     )
     try:
-        r = requests.get(url, timeout=_TIMEOUT)
-        r.raise_for_status()
-        return r.json()
+        return _get(url).json()
     except Exception as e:
         logger.error(t("crypto.error_prices", exc=e))
         return {}
@@ -36,9 +53,7 @@ def get_ohlc(coingecko_id: str, days: int = 30) -> List:
         f"/ohlc?vs_currency=eur&days={days}"
     )
     try:
-        r = requests.get(url, timeout=_TIMEOUT)
-        r.raise_for_status()
-        return r.json()
+        return _get(url).json()
     except Exception as e:
         logger.error(t("crypto.error_ohlc", cg_id=coingecko_id, exc=e))
         return []
@@ -51,12 +66,10 @@ def get_market_data(coingecko_id: str) -> Dict[str, Any]:
         f"?localization=false&tickers=false&community_data=false&developer_data=false"
     )
     try:
-        r  = requests.get(url, timeout=_TIMEOUT)
-        r.raise_for_status()
-        md = r.json().get("market_data", {})
+        md = _get(url).json().get("market_data", {})
         return {
-            "ath":             md.get("ath", {}).get("eur"),
-            "ath_change_pct":  md.get("ath_change_percentage", {}).get("eur"),
+            "ath":              md.get("ath", {}).get("eur"),
+            "ath_change_pct":   md.get("ath_change_percentage", {}).get("eur"),
             "price_change_30d": md.get("price_change_percentage_30d"),
             "price_change_14d": md.get("price_change_percentage_14d"),
         }

@@ -43,7 +43,7 @@ def main() -> int:
             data    = calculate_signals(hist, cfg["avg_cost"])
             results[fund_id] = (data, cfg)
             logger.debug(f"    {data['price']:.2f}€  "
-                        f"{_LEVEL_ICON[data['level']]} {data['level'].name}")
+                         f"{_LEVEL_ICON[data['level']]} {data['level'].name}")
         except Exception as e:
             logger.error(t("etf.error_processing", etf_id=fund_id, exc=f"{type(e).__name__}: {e}"))
             continue
@@ -62,22 +62,26 @@ def main() -> int:
     output_path = Path(__file__).parent.parent / "etf_report.html"
     deliver_report(html, output_path, send_email)
 
-    # Print quick summary
-    logger.warning("\n" + "=" * 50)
-    logger.warning(t("etf.summary_header"))
-    logger.warning("=" * 50)
+    # WARNING: one line per fund showing only alert level (no prices)
     for fund_id, (data, cfg) in results.items():
-        logger.warning(f"  {fund_id}: {data['price']:.2f}€  "
+        logger.warning(f"  {fund_id}: {_LEVEL_ICON[data['level']]} {data['level'].name}")
+
+    # INFO: full detail with prices and performance
+    logger.info("\n" + "=" * 50)
+    logger.info(t("etf.summary_header"))
+    logger.info("=" * 50)
+    for fund_id, (data, cfg) in results.items():
+        logger.info(f"  {fund_id}: {data['price']:.2f}€  "
                     f"{_LEVEL_ICON[data['level']]} {data['level'].name}")
         if data["pct_vs_cost"] is not None:
             label = t("etf.summary_gain") if data["pct_vs_cost"] >= 0 else t("etf.summary_loss")
-            logger.debug(f"         {t('etf.summary_perf', label=label, pct=data['pct_vs_cost'])}")
+            logger.info(f"         {t('etf.summary_perf', label=label, pct=data['pct_vs_cost'])}")
         proj = compare_vs_projection(
             fund_id, data["price"], cfg["units"], cfg["avg_cost"]
         )
         if proj:
-            logger.debug(f"         {t('etf.summary_vs_proj', year=proj['year'], dev=proj['deviation'])}")
-    logger.warning(f"\n  {t('etf.summary_plan', phase=current_phase())}")
+            logger.info(f"         {t('etf.summary_vs_proj', year=proj['year'], dev=proj['deviation'])}")
+    logger.info(f"\n  {t('etf.summary_plan', phase=current_phase())}")
     return 0
 
 
