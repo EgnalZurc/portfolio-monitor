@@ -1,23 +1,19 @@
 """
-shared/report_delivery.py — Shared HTML report delivery logic.
+shared/delivery.py — HTML report delivery logic.
 
 Behaviour:
   - No email credentials → save HTML to disk (fallback for local debugging)
   - Email credentials present + --generate-html flag → save to disk AND send email
   - Email credentials present, no flag → send email only (default CI behaviour)
-
-Usage:
-    from shared.report_delivery import deliver_report
-    deliver_report(html, output_path, email_fn, subject)
 """
 import logging
 import sys
 import webbrowser
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 from shared.i18n import t
-from shared.settings import EMAIL_CONFIG
+from shared.config_loader import EMAIL_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -66,15 +62,12 @@ def deliver_report(
     email_ready   = _email_configured()
 
     if not email_ready:
-        # No credentials — save to disk so the report is not lost
         logger.info(t("delivery.no_creds_fallback"))
         if _save_to_disk(html, output_path):
             _open_browser(output_path)
         return
 
     if generate_html:
-        # Credentials present + explicit flag — save to disk AND send email
         _save_to_disk(html, output_path)
 
-    # Send by email (always, when credentials are present)
     send_fn(html)

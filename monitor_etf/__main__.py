@@ -6,13 +6,13 @@ import sys
 from pathlib import Path
 
 from shared.i18n import t
-from shared.report_delivery import deliver_report
-from shared.settings import LOG_LEVEL
+from shared.delivery import deliver_report
+from shared.config_loader import LOG_LEVEL
 
 from .analysis import (
     calculate_signals, compare_vs_projection, current_phase, fetch_etf_data,
 )
-from .config import PORTFOLIO
+from .thresholds import PORTFOLIO
 from .email_sender import send_email
 from .models import AlertLevel
 from .report import build_report

@@ -1,6 +1,6 @@
 """
 monitor_etf/email_sender.py — SMTP delivery for the ETF report.
-Delivery logic (when to send vs save) lives in shared/report_delivery.py.
+Delivery logic (when to send vs save) lives in shared/delivery.py.
 """
 import logging
 import smtplib
@@ -8,7 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from shared.i18n import t
-from shared.settings import EMAIL_CONFIG
+from shared.config_loader import EMAIL_CONFIG
 
 logger = logging.getLogger(__name__)
 

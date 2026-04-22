@@ -12,7 +12,7 @@ import yfinance as yf
 
 from shared.i18n import t
 
-from .config import (
+from .thresholds import (
     CRITICAL_THRESHOLD, DROP_FROM_HIGH_WARN, FUND_IDS,
     LOSS_VS_COST_WARN, MA_LONG, MA_SHORT, PLAN, PORTFOLIO,
 )

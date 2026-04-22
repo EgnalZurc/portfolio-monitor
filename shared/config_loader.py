@@ -1,5 +1,5 @@
 """
-shared/settings.py — Loads settings.toml and exposes typed configuration.
+shared/config_loader.py — Loads settings.toml and exposes typed configuration.
 
 All monitors import from here. To change any value, edit settings.toml.
 Credentials are read exclusively from environment variables.
@@ -84,18 +84,18 @@ EMAIL_CONFIG: Dict[str, Any] = {
 
 def _build_fund_entry(raw: Dict[str, Any]) -> Dict[str, Any]:
     """Convert one [[etf.funds]] TOML entry into the runtime dict."""
-    start_date  = raw.get("inicio", "").strip()
-    avg_cost    = raw.get("precio_medio", 0.0)
+    start_date = raw.get("inicio", "").strip()
+    avg_cost   = raw.get("precio_medio", 0.0)
     return {
-        "ticker":            raw.get("ticker",           ""),
-        "name":              raw.get("name",             raw.get("id", "")),
-        "isin":              raw.get("isin",             ""),
-        "avg_cost":          avg_cost if avg_cost > 0 else None,
-        "units":             raw.get("participaciones",  0.0),
-        "monthly_contrib":   raw.get("aportacion_mes",   0.0),
-        "phase2_contrib":    raw.get("aportacion_fase2", 0.0),
-        "start_date":        start_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        "color":             raw.get("color",            "#3A7BD5"),
+        "ticker":          raw.get("ticker",           ""),
+        "name":            raw.get("name",             raw.get("id", "")),
+        "isin":            raw.get("isin",             ""),
+        "avg_cost":        avg_cost if avg_cost > 0 else None,
+        "units":           raw.get("participaciones",  0.0),
+        "monthly_contrib": raw.get("aportacion_mes",   0.0),
+        "phase2_contrib":  raw.get("aportacion_fase2", 0.0),
+        "start_date":      start_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "color":           raw.get("color",            "#3A7BD5"),
     }
 
 
@@ -138,11 +138,11 @@ PLAN: Dict[str, Any] = {
 
 _thr = _get("etf.thresholds", {})
 
-MA_SHORT:              int   = _thr.get("ma_short",            50)
-MA_LONG:               int   = _thr.get("ma_long",             200)
-DROP_FROM_HIGH_WARN:   float = _thr.get("drop_from_high_warn", -0.15)
-LOSS_VS_COST_WARN:     float = _thr.get("loss_vs_cost_warn",   -0.10)
-CRITICAL_THRESHOLD:    float = _thr.get("critical_threshold",  -0.20)
+MA_SHORT:            int   = _thr.get("ma_short",            50)
+MA_LONG:             int   = _thr.get("ma_long",             200)
+DROP_FROM_HIGH_WARN: float = _thr.get("drop_from_high_warn", -0.15)
+LOSS_VS_COST_WARN:   float = _thr.get("loss_vs_cost_warn",   -0.10)
+CRITICAL_THRESHOLD:  float = _thr.get("critical_threshold",  -0.20)
 
 
 # ---------------------------------------------------------------------------

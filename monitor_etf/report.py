@@ -7,13 +7,13 @@ from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from shared.i18n import t
-from shared.utils import fmt_timestamp
+from shared.timezone_utils import fmt_timestamp
 
 from .analysis import (
     compare_vs_projection, current_contribution, current_phase,
     recommendation, years_since_start,
 )
-from .config import PLAN
+from .thresholds import PLAN
 from .fiscal import calculate_tax_impact
 from .models import AlertLevel
 

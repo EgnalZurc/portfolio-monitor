@@ -1,5 +1,5 @@
 """
-shared/utils.py — Shared timezone and date formatting utilities.
+shared/timezone_utils.py — Madrid timezone and timestamp formatting utilities.
 """
 import functools
 from datetime import datetime

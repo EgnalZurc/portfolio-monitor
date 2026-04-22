@@ -3,7 +3,7 @@ monitor_etf/fiscal.py — Spanish IRPF capital gains tax calculation.
 """
 from typing import Dict, Optional
 
-from .config import PLAN
+from .thresholds import PLAN
 
 
 def calculate_tax(gain: float) -> float:

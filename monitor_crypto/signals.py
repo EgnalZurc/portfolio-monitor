@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from shared.i18n import t
 
-from .config import (
+from .thresholds import (
     ATH_DANGER_PCT, ATH_WARN_PCT,
     CHANGE_24H_DANGER, CHANGE_24H_PUMP, CHANGE_24H_WARN,
     CHANGE_30D_BEAR, CHANGE_30D_BULL,

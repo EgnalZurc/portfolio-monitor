@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from shared.i18n import t
 
-from .config import ATH_DANGER_PCT, ATH_WARN_PCT
+from .thresholds import ATH_DANGER_PCT, ATH_WARN_PCT
 from .signals import compute_signals, days_until_available, next_distribution_in
 
 
