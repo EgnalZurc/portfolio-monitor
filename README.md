@@ -278,7 +278,7 @@ The order must match the order of `[[etf.funds]]` blocks:
 
 ```toml
 [etf.plan.milestones]
-# year = [IUIT_eur, IWDA_eur, VWCE_eur]
+# year = [FUND1_eur, FUND2_eur, FUND3_eur]
 1  = [1_800,    1_257,   200]
 2  = [3_352,    3_643,   500]
 ```
