@@ -99,6 +99,7 @@ def _status_card(
         f'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">'
         f'<div><h2 style="margin:0;color:#1B2A4A;font-size:20px">{_html.escape(fund_id)}</h2>'
         f'<p style="margin:3px 0 0;color:#888;font-size:12px">{_html.escape(cfg["isin"])}</p></div>'
+        f'<div style="background:{level.background};border:2px solid {level.color};border-radius:8px;padding:6px 12px;text-align:center">'
         f'<div style="font-size:18px">{level.emoji}</div>'
         f'<div style="font-size:11px;font-weight:700;color:{level.color}">{level.label}</div></div></div>'
         f'<div style="font-size:30px;font-weight:700;color:#1B2A4A;margin-bottom:4px">{data["price"]:.2f} €</div>'
@@ -205,7 +206,7 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
     total      = 0.0
     fund_rows  = []
     for fund_id, (data, cfg) in results.items():
-        val    = data["price"] * cfg["participaciones"]
+        val    = data["price"] * cfg["units"]
         total += val
         fund_rows.append((fund_id, val))
 
@@ -251,9 +252,9 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
 
     # Investment plan block
     today       = datetime.today()
-    is_phase2   = today >= PLAN["fecha_cambio_fase"]
-    months_left = max(0, int((PLAN["fecha_cambio_fase"] - today).days / 30.44))
-    phase2_date = PLAN["fecha_cambio_fase"].strftime("%B %Y")
+    is_phase2   = today >= PLAN["phase_change_date"]
+    months_left = max(0, int((PLAN["phase_change_date"] - today).days / 30.44))
+    phase2_date = PLAN["phase_change_date"].strftime("%B %Y")
     year_num    = years_since_start()
     total_val   = sum(d["price"] * c["units"] for d, c in results.values())
     total_gain  = sum(
@@ -262,7 +263,7 @@ def build_report(results: Dict[str, Tuple[Dict[str, Any], Dict[str, Any]]]) -> s
         if c["avg_cost"] and c["units"] > 0
     )
     milestone_total = sum(
-        PLAN["hitos"].get(min(year_num, 10), (0, 0))[i]
+        PLAN["milestones"].get(min(year_num, 10), (0, 0))[i]
         for i in range(len(results))
     )
 
