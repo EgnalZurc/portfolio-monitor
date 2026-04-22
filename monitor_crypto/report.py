@@ -114,7 +114,7 @@ def _card_html(
         f'<span style="color:{c30}">30d: {change_30d_str}</span> &nbsp; '
         f'<span style="color:{c14}">14d: {change_14d_str}</span></div>'
         f'</div><div class="col-spark">{spark}'
-        f'<span style="font-size:10px;color:#555;margin-top:4px">30 días</span></div></div>'
+        f'<span style="font-size:10px;color:#555;margin-top:4px">{t("crypto.ui.sparkline_period")}</span></div></div>'
         f'<div class="signals">{signals_html}</div></div>'
     )
 
@@ -234,7 +234,7 @@ def generate_html(
   {fg_html}
   {cards_html}
   <div class="footer">
-    <a href="https://www.kucoin.com/es/assets/earn-account" class="btn">🚀 Abrir KuCoin Earn</a>
+    <a href="https://www.kucoin.com/es/assets/earn-account" class="btn">{t("crypto.ui.kucoin_btn")}</a>
     <div class="footer-note">{t("crypto.footer_note")}</div>
   </div>
 </div>
